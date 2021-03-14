@@ -1,7 +1,5 @@
 package main.shipment;
 
-
-import java.sql.Date;
 import java.time.LocalDate;
 
 public class Letter extends Shipment{
@@ -22,5 +20,20 @@ public class Letter extends Shipment{
     @Override
     protected boolean validateFragile() {
         return false;
+    }
+
+    @Override
+    protected int validateLength() {
+        return 10;
+    }
+
+    @Override
+    protected int validateWidth() {
+        return 5;
+    }
+
+    @Override
+    protected int validateHeight() {
+        return 0;
     }
 }

@@ -54,9 +54,10 @@ public class ReportToTXT extends Thread{
            ps.println("Total turnover: "+rs.getDouble(1));
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-        } finally {
-            DBConnector.getInstance().closeConnection();
         }
+//        finally {
+//            DBConnector.getInstance().closeConnection();
+//        }
     }
 
     private synchronized void printTotalShipments(PrintStream ps){
@@ -74,7 +75,7 @@ public class ReportToTXT extends Thread{
            ps.println("Total shipments: "+totalShipments);
            ResultSet rows2 = st2.executeQuery(selectQuery2);
            rows2.next();
-           ps.println("Total letter percentage: "+Math.round(rows2.getDouble(1))+"%%");
+           ps.println("Total letter percentage: "+Math.round(rows2.getDouble(1))+"%");
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }

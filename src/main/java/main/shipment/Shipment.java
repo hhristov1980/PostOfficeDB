@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 
 public abstract class Shipment {
-    private static int uniqueId = 1;
+
     private int shipmentID;
     private String type;
     private int senderId;
@@ -19,8 +19,9 @@ public abstract class Shipment {
     private double price;
     private LocalDate date;
     protected boolean isFragile;
-
-
+    protected int length;
+    protected int width;
+    protected int height;
 
     public Shipment (String senderNames, String senderAddress, String receiverNames, String receiverAddress, LocalDate date, int senderId){
         if(checker(senderNames,senderAddress,receiverNames,receiverAddress)){
@@ -30,9 +31,13 @@ public abstract class Shipment {
             this.receiverAddress = receiverAddress;
             this.senderId = senderId;
             this.type = validateType();
+            this.isFragile = validateFragile();
+            this.length = validateLength();
+            this.width = validateWidth();
+            this.height = validateHeight();
             this.price = validatePrice();
             this.date = date;
-            this.isFragile = validateFragile();
+
         }
         else {
             try {
@@ -44,8 +49,12 @@ public abstract class Shipment {
 
     }
     protected abstract String validateType();
-    protected abstract double validatePrice();
     protected abstract boolean validateFragile();
+    protected abstract int validateLength();
+    protected abstract int validateWidth();
+    protected abstract int validateHeight();
+    protected abstract double validatePrice();
+
 
 
     private boolean checker(String senderNames, String senderAddress, String receiverNames, String receiverAddress){
@@ -101,5 +110,9 @@ public abstract class Shipment {
 
     public int getSenderId() {
         return senderId;
+    }
+
+    public void setShipmentID(int shipmentID) {
+        this.shipmentID = shipmentID;
     }
 }

@@ -12,10 +12,7 @@ import main.shipment.Shipment;
 import main.util.Constants;
 import main.util.Randomizer;
 
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Random;
@@ -45,11 +42,14 @@ public class PostOffice {
         for(int i = 0; i<5; i++){
             String firstName = Constants.FIRST_NAMES[Randomizer.getRandomInt(0,Constants.FIRST_NAMES.length-1)];
             String lastName = Constants.LAST_NAMES[Randomizer.getRandomInt(0,Constants.LAST_NAMES.length-1)];
-            postmen.add(new JuniorPostman(firstName,lastName,this));
+            JuniorPostman juniorPostman = new JuniorPostman(firstName,lastName,this);
+            postmen.add(juniorPostman);
+            registerCollector(juniorPostman);
             firstName = Constants.FIRST_NAMES[Randomizer.getRandomInt(0,Constants.FIRST_NAMES.length-1)];
             lastName = Constants.LAST_NAMES[Randomizer.getRandomInt(0,Constants.LAST_NAMES.length-1)];
             SeniorPostman seniorPostman = new SeniorPostman(firstName,lastName,this);
             postmen.add(seniorPostman);
+            registerDeliverer(seniorPostman);
         }
     }
 
@@ -64,10 +64,13 @@ public class PostOffice {
         if(shipment.getType().equals("Parcel")){
             storage.add(shipment);
             System.out.println(citizen.getFirstName()+" "+citizen.getLastName()+" send a "+shipment.getType()+" at PostOffice");
+            putShipmentDetailsInDBByPO(shipment);
+            putShipmentDetailsInArchive(shipment);
 
         }
         else {
-            if(new Random().nextBoolean()){
+            //20% chance letter to PO; 80% chance letter to PB
+            if(Randomizer.getRandomInt(1,10)>2){
                 PostBox postBox = postBoxes.get(Randomizer.getRandomInt(0,postBoxes.size()-1));
                 postBox.addLetter((Letter) shipment);
                 System.out.println(citizen.getFirstName()+" "+citizen.getLastName()+" send a "+shipment.getType()+" via PostBox");
@@ -75,12 +78,12 @@ public class PostOffice {
             else {
                 storage.add(shipment);
                 System.out.println(citizen.getFirstName()+" "+citizen.getLastName()+" send a "+shipment.getType()+" at PostOffice");
+                putShipmentDetailsInDBByPO(shipment);
+                putShipmentDetailsInArchive(shipment);
 
             }
         }
         turnover+=shipment.getPrice();
-        putShipmentDetailsInArchive(shipment);
-        putShipmentDetailsInDB(shipment);
         notifyAll();
     }
 
@@ -88,6 +91,7 @@ public class PostOffice {
         if(storage.size()>=50){
             try {
                 System.out.println("Too many shipments at office! "+juniorPostman.getFirstName()+" "+juniorPostman.getLastName()+" is waiting!");
+                notifyAll();
                 wait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -106,9 +110,10 @@ public class PostOffice {
     public synchronized void putLettersInStorage(JuniorPostman juniorPostman){
         ArrayList<Letter> letters = new ArrayList<>();
         letters.addAll(juniorPostman.emptyBag());
+        System.out.println(juniorPostman.getFirstName()+" "+juniorPostman.getLastName()+" has "+letters.size()+" letters in his bag");
         for(Letter l: letters){
             putShipmentDetailsInArchive(l);
-            putShipmentDetailsInDB(l);
+            putShipmentDetailsInDBByJP(l,juniorPostman);
             storage.add(l);
         }
         if(storage.size()>=50){
@@ -133,6 +138,7 @@ public class PostOffice {
                     try {
                         Shipment shipment = itemsForDeliver.take();
                         seniorPostman.addShipment(shipment);
+                        updateShipmentInfo(shipment,seniorPostman);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -152,23 +158,106 @@ public class PostOffice {
     }
 
 
-    private synchronized void putShipmentDetailsInDB(Shipment sh){
+    private synchronized void putShipmentDetailsInDBByJP(Shipment sh, JuniorPostman juniorPostman){
+        String fragile = "No";
+        if(sh.isFragile()){
+            fragile = "Yes";
+        }
         Connection connection = DBConnector.getInstance().getConnection();
-        String insertQuery = "INSERT INTO archive (shipment_type, sent_at, sender_names, sender_address, receiver_names, receiver_address, price) VALUES (?,?,?,?,?,?,?);";
-        try(PreparedStatement ps = connection.prepareStatement(insertQuery)){
+        String insertQuery = "INSERT INTO archive (shipment_type, sent_at, sender_id, collected_by, fragile, price) VALUES (?,?,?,?,?,?);";
+        try(PreparedStatement ps = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS)){
             ps.setString(1,sh.getType());
             ps.setDate(2,Date.valueOf(sh.getDate()));
-            ps.setString(3,sh.getSenderNames());
-            ps.setString(4,sh.getSenderAddress());
-            ps.setString(5,sh.getReceiverNames());
-            ps.setString(6,sh.getReceiverAddress());
-            ps.setDouble(7,sh.getPrice());
+            ps.setInt(3,sh.getSenderId());
+            ps.setInt(4,juniorPostman.getPersonId());
+            ps.setString(5,fragile);
+            ps.setDouble(6,sh.getPrice());
             ps.executeUpdate();
+            ResultSet key = ps.getGeneratedKeys();
+            key.next();
+            int shipmentId = (int) key.getLong(1);
+            sh.setShipmentID(shipmentId);
 
         } catch (SQLException e) {
-            System.out.println("Problem with insert query");
-        } finally {
-            DBConnector.getInstance().closeConnection();
+            System.out.println("Problem with insert JP query");
         }
+//        finally {
+//            DBConnector.getInstance().closeConnection();
+//        }
     }
+
+    private synchronized void putShipmentDetailsInDBByPO(Shipment sh){
+        String fragile = "No";
+        if(sh.isFragile()){
+            fragile = "Yes";
+        }
+        Connection connection = DBConnector.getInstance().getConnection();
+        String insertQuery = "INSERT INTO archive (shipment_type, sent_at, sender_id, fragile, price) VALUES (?,?,?,?,?);";
+        try(PreparedStatement ps = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS)){
+            ps.setString(1,sh.getType());
+            ps.setDate(2,Date.valueOf(sh.getDate()));
+            ps.setInt(3,sh.getSenderId());
+            ps.setString(4,fragile);
+            ps.setDouble(5,sh.getPrice());
+            ps.executeUpdate();
+            ResultSet key = ps.getGeneratedKeys();
+            key.next();
+            int shipmentId = (int) key.getLong(1);
+            sh.setShipmentID(shipmentId);
+
+        } catch (SQLException e) {
+            System.out.println("Problem with insert PO query");
+        }
+//        finally {
+//            DBConnector.getInstance().closeConnection();
+//        }
+    }
+
+    private synchronized void registerDeliverer(SeniorPostman seniorPostman){
+        Connection connection = DBConnector.getInstance().getConnection();
+        String insertQuery = "INSERT INTO deliverers(deliverer_id, first_name, last_name) VALUES (?,?,?);";
+        try(PreparedStatement ps = connection.prepareStatement(insertQuery)){
+            ps.setInt(1,seniorPostman.getPersonId());
+            ps.setString(2, seniorPostman.getFirstName());
+            ps.setString(3, seniorPostman.getLastName());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Problem with postmen register");
+        }
+//        finally {
+//            DBConnector.getInstance().closeConnection();
+//        }
+    }
+
+    private synchronized void registerCollector(JuniorPostman juniorPostman){
+        Connection connection = DBConnector.getInstance().getConnection();
+        String insertQuery = "INSERT INTO collectors(collector_id, first_name, last_name) VALUES (?,?,?);";
+        try(PreparedStatement ps = connection.prepareStatement(insertQuery)){
+            ps.setInt(1,juniorPostman.getPersonId());
+            ps.setString(2, juniorPostman.getFirstName());
+            ps.setString(3, juniorPostman.getLastName());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Problem with postmen register");
+        }
+//        finally {
+//            DBConnector.getInstance().closeConnection();
+//        }
+    }
+
+    private synchronized void updateShipmentInfo(Shipment shipment, SeniorPostman seniorPostman){
+        Connection connection = DBConnector.getInstance().getConnection();
+        String updateQuery = "UPDATE archive SET delivered_by = ? WHERE shipment_id = ?;";
+        try(PreparedStatement ps = connection.prepareStatement(updateQuery)){
+            ps.setInt(1,seniorPostman.getPersonId());
+            ps.setInt(2,shipment.getShipmentID());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Problem with update info");
+        }
+//        finally {
+//            DBConnector.getInstance().closeConnection();
+//        }
+    }
+
 }

@@ -8,18 +8,11 @@ import java.time.LocalDate;
 import java.util.Random;
 
 public class Parcel extends Shipment{
-    private double length;
-    private double width;
-    private double height;
+
 
 
     public Parcel(String senderNames, String senderAddress, String receiverNames, String receiverAddress, LocalDate date, int senderId) {
         super(senderNames, senderAddress, receiverNames, receiverAddress,date,senderId);
-        //random generated dimensions and characteristics
-
-        this.length = Randomizer.getRandomInt(5,120);
-        this.width = Randomizer.getRandomInt(5,120);
-        this.height = Randomizer.getRandomInt(5,120);
 
     }
 
@@ -43,6 +36,21 @@ public class Parcel extends Shipment{
     @Override
     protected boolean validateFragile() {
         return new Random().nextBoolean();
+    }
+
+    @Override
+    protected int validateLength() {
+        return Randomizer.getRandomInt(20,120);
+    }
+
+    @Override
+    protected int validateWidth() {
+        return Randomizer.getRandomInt(10,100);
+    }
+
+    @Override
+    protected int validateHeight() {
+        return Randomizer.getRandomInt(5,80);
     }
 
 }

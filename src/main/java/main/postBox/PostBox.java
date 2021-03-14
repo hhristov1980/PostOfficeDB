@@ -20,8 +20,9 @@ public class PostBox {
     public CopyOnWriteArrayList<Letter> emptyBox(){
         CopyOnWriteArrayList <Letter> letters1 = new CopyOnWriteArrayList<>();
         for(Letter l: letters){
-            letters1.remove(l);
+            letters1.add(l);
         }
+        letters.clear();
         return letters1;
     }
 

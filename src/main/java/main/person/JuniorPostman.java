@@ -35,8 +35,9 @@ public class JuniorPostman extends Postman{
     public CopyOnWriteArrayList<Letter> emptyBag(){
         CopyOnWriteArrayList <Letter> letters1 = new CopyOnWriteArrayList<>();
         for(Letter l: letters){
-            letters1.remove(l);
+            letters1.add(l);
         }
+        letters.clear();
         return letters1;
     }
 
