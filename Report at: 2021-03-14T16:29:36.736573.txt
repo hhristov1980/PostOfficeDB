@@ -1,0 +1,46 @@
+=================== REPORT AT: 2021-03-14T16:29:36.736573==================
+Total turnover: 2763.5
+--------------------------------
+
+Parcel: 	700
+Letter: 	567
+Total shipments: 1267
+--------------------------------
+
+Total letter percentage: 45%
+--------------------------------
+
+Collected shipments by Post Office or Collector:
+Post Office collected 819 shipments.
+Boris Borisov collected 68 shipments.
+Krasimir Alexandrov collected 126 shipments.
+Georgi Stoyanov collected 104 shipments.
+Georgi Borisov collected 149 shipments.
+Georgi Nikolaev collected 1 shipments.
+--------------------------------
+
+Delivered shipments by:
+Alexander Kostadinov delivered 40 shipments.
+Nikolay Borisov delivered 50 shipments.
+Kostadin Alexandrov delivered 40 shipments.
+Stoyan Alexandrov delivered 40 shipments.
+Georgi Petrov delivered 40 shipments.
+--------------------------------
+
+Delivered letters by:
+Alexander Kostadinov delivered 12letters.
+Nikolay Borisov delivered 33letters.
+Kostadin Alexandrov delivered 13letters.
+Stoyan Alexandrov delivered 9letters.
+Georgi Petrov delivered 11letters.
+--------------------------------
+
+Delivered parcels by:
+Alexander Kostadinov delivered 28parcels.
+Nikolay Borisov delivered 17parcels.
+Kostadin Alexandrov delivered 27parcels.
+Stoyan Alexandrov delivered 31parcels.
+Georgi Petrov delivered 29parcels.
+--------------------------------
+
+============================ END OF REPORT ========================

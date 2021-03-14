@@ -36,6 +36,7 @@ public class PostOffice {
         archive = new ConcurrentSkipListMap<>();
         itemsForDeliver = new LinkedBlockingQueue<>();
         postmen = new CopyOnWriteArraySet<>();
+        registerPostOfficeAsCollector();
         for(int i = 0; i<25; i++){
             postBoxes.add(new PostBox());
         }
@@ -192,13 +193,14 @@ public class PostOffice {
             fragile = "Yes";
         }
         Connection connection = DBConnector.getInstance().getConnection();
-        String insertQuery = "INSERT INTO archive (shipment_type, sent_at, sender_id, fragile, price) VALUES (?,?,?,?,?);";
+        String insertQuery = "INSERT INTO archive (shipment_type, sent_at, sender_id, collected_by, fragile, price) VALUES (?,?,?,?,?,?);";
         try(PreparedStatement ps = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS)){
             ps.setString(1,sh.getType());
             ps.setDate(2,Date.valueOf(sh.getDate()));
             ps.setInt(3,sh.getSenderId());
-            ps.setString(4,fragile);
-            ps.setDouble(5,sh.getPrice());
+            ps.setInt(4,0);
+            ps.setString(5,fragile);
+            ps.setDouble(6,sh.getPrice());
             ps.executeUpdate();
             ResultSet key = ps.getGeneratedKeys();
             key.next();
@@ -254,6 +256,22 @@ public class PostOffice {
             ps.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Problem with update info");
+        }
+//        finally {
+//            DBConnector.getInstance().closeConnection();
+//        }
+    }
+
+    private synchronized void registerPostOfficeAsCollector(){
+        Connection connection = DBConnector.getInstance().getConnection();
+        String insertQuery = "INSERT INTO collectors(collector_id, first_name, last_name) VALUES (?,?,?);";
+        try(PreparedStatement ps = connection.prepareStatement(insertQuery)){
+            ps.setInt(1,0);
+            ps.setString(2, "Post");
+            ps.setString(3, "Office");
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Problem with postmen register");
         }
 //        finally {
 //            DBConnector.getInstance().closeConnection();
